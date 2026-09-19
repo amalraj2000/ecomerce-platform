@@ -23,11 +23,13 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
+# Install PHP dependencies first — Vite needs vendor/tightenco/ziggy to resolve
+# the ZiggyVue import in resources/js/app.js during the build step below
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 # Install JS dependencies and build Vue/Tailwind assets for production
 RUN npm ci --ignore-scripts && npm run build
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Set correct storage & cache permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
