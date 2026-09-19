@@ -32,12 +32,13 @@ class OrderController extends Controller
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        $order = \App\Models\Order::with(['user', 'vendor', 'address', 'items.product.images'])->findOrFail($id);
+        
+        return \Inertia\Inertia::render('Admin/Orders/Show', [
+            'order' => $order
+        ]);
     }
 
     /**
@@ -48,12 +49,19 @@ class OrderController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $order = \App\Models\Order::findOrFail($id);
+        
+        $request->validate([
+            'status' => 'required|in:pending,accepted,processing,shipped,delivered,cancelled'
+        ]);
+
+        $order->update([
+            'status' => $request->status
+        ]);
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
     /**

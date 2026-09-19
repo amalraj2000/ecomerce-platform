@@ -32,6 +32,7 @@ defineProps({
                                     <th class="py-4 px-6 font-medium text-gray-900">Vendor</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Total</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Status</th>
+                                    <th class="py-4 px-6 font-medium text-gray-900 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -43,9 +44,12 @@ defineProps({
                                     <td class="py-4 px-6">
                                         <span class="capitalize bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ order.status }}</span>
                                     </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <Link :href="route('admin.orders.show', order.id)" class="text-blue-600 hover:text-blue-900 font-medium text-sm">View</Link>
+                                    </td>
                                 </tr>
                                 <tr v-if="orders.data.length === 0">
-                                    <td colspan="5" class="py-8 text-center text-gray-500">
+                                    <td colspan="6" class="py-8 text-center text-gray-500">
                                         No orders found.
                                     </td>
                                 </tr>

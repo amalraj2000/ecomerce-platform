@@ -49,6 +49,16 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        if ($user->status === 'inactive') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'Your account has been deactivated. Please contact support.',
+            ]);
+        }
+
         if ($user->role === 'vendor') {
             $vendor = $user->vendorProfile;
             if (!$vendor || !$vendor->is_verified) {
@@ -58,6 +68,15 @@ class AuthenticatedSessionController extends Controller
 
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'email' => 'Your vendor account is pending approval by an administrator.',
+                ]);
+            }
+            if ($vendor->status === 'inactive') {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'email' => 'Your vendor store has been deactivated by an administrator.',
                 ]);
             }
         }

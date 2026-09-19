@@ -13,9 +13,18 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
     Route::get('/cart', [\App\Http\Controllers\User\CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [\App\Http\Controllers\User\CartController::class, 'store'])->name('cart.store');
     Route::delete('/cart/{item}', [\App\Http\Controllers\User\CartController::class, 'destroy'])->name('cart.destroy');
+
+    // Wishlist
+    Route::get('/wishlist', [\App\Http\Controllers\User\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/add', [\App\Http\Controllers\User\WishlistController::class, 'store'])->name('wishlist.store');
+    Route::delete('/wishlist/{item}', [\App\Http\Controllers\User\WishlistController::class, 'destroy'])->name('wishlist.destroy');
     
     Route::get('/checkout', [\App\Http\Controllers\User\CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [\App\Http\Controllers\User\CheckoutController::class, 'store'])->name('checkout.store');
+
+    // Reviews
+    Route::post('/reviews', [\App\Http\Controllers\User\ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/reviews/{id}/vote', [\App\Http\Controllers\User\ReviewController::class, 'vote'])->name('reviews.vote');
 });
 
 Route::middleware('auth')->group(function () {

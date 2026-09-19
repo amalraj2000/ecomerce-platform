@@ -43,7 +43,7 @@ defineProps({
                                         <span class="capitalize bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{{ order.status }}</span>
                                     </td>
                                     <td class="py-4 px-6 text-right space-x-3">
-                                        <Link href="#" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Manage</Link>
+                                        <Link :href="route('vendor.orders.show', order.id)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Manage</Link>
                                     </td>
                                 </tr>
                                 <tr v-if="orders.data.length === 0">

@@ -69,13 +69,19 @@ class CategoryController extends Controller
     {
         $category = \App\Models\Category::findOrFail($id);
         
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug,' . $id,
-            'parent_id' => 'nullable|exists:categories,id',
-        ]);
+        $rules = [];
+        if ($request->has('name')) {
+            $rules['name'] = 'required|string|max:255';
+            $rules['slug'] = 'required|string|max:255|unique:categories,slug,' . $id;
+            $rules['parent_id'] = 'nullable|exists:categories,id';
+        }
+        if ($request->has('status')) {
+            $rules['status'] = 'required|in:active,inactive';
+        }
 
-        $category->update($request->all());
+        $request->validate($rules);
+
+        $category->update($request->only(['name', 'slug', 'parent_id', 'status']));
 
         return redirect()->route('admin.categories.index')->with('status', 'Category updated successfully.');
     }

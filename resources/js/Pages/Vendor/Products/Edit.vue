@@ -24,6 +24,7 @@ const form = useForm({
     price: props.product.price,
     stock: props.product.stock,
     description: props.product.description,
+    status: props.product.status || 'active',
     colors: props.product.colors ? props.product.colors.join(', ') : '',
     sizes: props.product.sizes ? props.product.sizes.join(', ') : '',
     image: null,
@@ -134,7 +135,7 @@ const submit = () => {
                             </div>
 
                             <div>
-                                <InputLabel for="sizes" value="Available Sizes (comma separated)" />
+                                <InputLabel for="sizes" value="Available Varients (comma separated)" />
                                 <TextInput
                                     id="sizes"
                                     type="text"
@@ -143,6 +144,19 @@ const submit = () => {
                                     placeholder="e.g. S, M, L, XL"
                                 />
                                 <InputError class="mt-2" :message="form.errors.sizes" />
+                            </div>
+
+                            <div>
+                                <InputLabel for="status" value="Status" />
+                                <select 
+                                    id="status"
+                                    v-model="form.status" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                                <InputError class="mt-2" :message="form.errors.status" />
                             </div>
                         </div>
 

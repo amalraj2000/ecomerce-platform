@@ -1,7 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
@@ -36,8 +36,18 @@ watch(() => props.filters, (newFilters) => {
   search.value = newFilters.search || '';
   min_price.value = newFilters.min_price || '';
   max_price.value = newFilters.max_price || '';
-  sort.value = newFilters.sort || 'newest';
 }, { deep: true });
+
+const wishlistForm = useForm({
+  product_id: null
+});
+
+const addToWishlist = (productId) => {
+  wishlistForm.product_id = productId;
+  wishlistForm.post(route('wishlist.store'), {
+    preserveScroll: true
+  });
+};
 </script>
 
 <template>
@@ -150,6 +160,13 @@ watch(() => props.filters, (newFilters) => {
                <span v-if="product.discount_percentage > 0 && product.stock > 0" class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-20">
                  {{ product.discount_percentage }}% OFF
                </span>
+
+               <!-- Wishlist Button -->
+               <button @click.prevent="addToWishlist(product.id)" class="absolute top-2 right-2 bg-white/80 backdrop-blur-sm dark:bg-slate-900/80 p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-all z-20 shadow-sm" title="Add to Wishlist">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                 </svg>
+               </button>
             </div>
 
             <div class="p-5 flex flex-col justify-between flex-1">

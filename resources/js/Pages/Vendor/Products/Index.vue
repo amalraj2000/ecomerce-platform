@@ -26,6 +26,12 @@ const deleteProduct = (id) => {
         }
     });
 };
+
+const toggleStatus = (product) => {
+    router.put(route('vendor.products.update', product.id), {
+        status: product.status === 'active' ? 'inactive' : 'active'
+    }, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -57,6 +63,7 @@ const deleteProduct = (id) => {
                                     <th class="py-4 px-6 font-medium text-gray-900">Category</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Price</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Stock</th>
+                                    <th class="py-4 px-6 font-medium text-gray-900">Status</th>
                                     <th class="py-4 px-6 font-medium text-gray-900 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -72,13 +79,18 @@ const deleteProduct = (id) => {
                                     <td class="py-4 px-6">
                                         <span :class="product.stock > 10 ? 'text-green-600' : 'text-red-600'">{{ product.stock }} in stock</span>
                                     </td>
+                                    <td class="py-4 px-6">
+                                        <span class="capitalize text-xs px-2 py-1 rounded-full cursor-pointer" @click="toggleStatus(product)" :class="product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                            {{ product.status || 'active' }}
+                                        </span>
+                                    </td>
                                     <td class="py-4 px-6 text-right space-x-3">
                                         <Link :href="route('vendor.products.edit', product.id)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</Link>
                                         <button @click="deleteProduct(product.id)" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
                                     </td>
                                 </tr>
                                 <tr v-if="products.data.length === 0">
-                                    <td colspan="6" class="py-12 text-center text-gray-500">
+                                    <td colspan="7" class="py-12 text-center text-gray-500">
                                         You haven't added any products yet.
                                     </td>
                                 </tr>

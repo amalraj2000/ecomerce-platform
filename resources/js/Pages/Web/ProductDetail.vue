@@ -5,8 +5,11 @@ import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
   product: Object,
-  relatedProducts: Array
+  relatedProducts: Array,
+  hasBought: Boolean
 });
+
+const activeTab = ref('description');
 
 // Image Gallery
 const activeImage = ref(props.product.images?.length > 0 ? props.product.images.find(i => i.is_primary)?.image_url || props.product.images[0].image_url : null);
@@ -73,6 +76,43 @@ const buyNow = () => {
         onSuccess: () => window.location.href = route('checkout.index'),
     });
 };
+const wishlistForm = useForm({
+    product_id: props.product.id
+});
+
+const addToWishlist = () => {
+    if (!page.props.auth.user) {
+        window.location.href = route('login');
+        return;
+    }
+    wishlistForm.post(route('wishlist.store'), {
+        preserveScroll: true
+    });
+};
+
+const reviewForm = useForm({
+    product_id: props.product.id,
+    rating: 5,
+    comment: '',
+    images: []
+});
+
+const handleImageUpload = (e) => {
+    reviewForm.images = e.target.files;
+};
+
+const submitReview = () => {
+    reviewForm.post(route('reviews.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            reviewForm.reset('rating', 'comment', 'images');
+        }
+    });
+};
+
+const voteReview = (reviewId) => {
+    router.post(route('reviews.vote', reviewId), {}, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -134,10 +174,18 @@ const buyNow = () => {
         </div>
 
         <!-- Right: Product Details -->
-        <div class="w-full lg:w-7/12 flex flex-col">
+        <div class="w-full lg:w-7/12 flex flex-col relative">
           <div class="mb-4">
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ product.title }}</h1>
-            <div class="flex items-center space-x-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 pr-12">{{ product.title }}</h1>
+            
+            <!-- Wishlist Button inside header -->
+            <button @click="addToWishlist" :disabled="wishlistForm.processing" class="absolute top-6 right-6 md:top-10 md:right-10 bg-white/80 backdrop-blur-sm dark:bg-slate-800/80 p-3 rounded-full text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-700 transition-all z-20 shadow-md border border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Add to Wishlist">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                 </svg>
+            </button>
+
+            <div class="flex items-center space-x-4 mt-2">
               <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">{{ product.brand || 'No Brand' }}</span>
               <div class="flex items-center text-sm text-slate-600 dark:text-slate-400">
                 <span class="flex items-center text-yellow-500 mr-1">
@@ -175,7 +223,7 @@ const buyNow = () => {
           <!-- Variations: Size -->
           <div v-if="sizes.length > 0" class="mb-8 border-b border-slate-200 dark:border-slate-800 pb-8">
             <div class="flex justify-between items-center mb-3">
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Size: <span class="font-normal text-slate-600 dark:text-slate-400">{{ selectedSize }}</span></h3>
+              <h3 class="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Varients: <span class="font-normal text-slate-600 dark:text-slate-400">{{ selectedSize }}</span></h3>
             </div>
             <div class="flex flex-wrap gap-3">
               <button v-for="size in sizes" :key="size" @click="selectedSize = size"
@@ -248,13 +296,94 @@ const buyNow = () => {
     <!-- Description & Reviews Section -->
     <div class="mt-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-10">
       <div class="border-b border-slate-200 dark:border-slate-800 mb-6 flex space-x-8">
-        <button class="border-b-2 border-blue-600 text-blue-600 font-bold py-3 px-2">Description</button>
-        <button class="text-slate-500 font-medium py-3 px-2 hover:text-slate-900 dark:hover:text-white transition-colors">Reviews</button>
+        <button @click="activeTab = 'description'" :class="activeTab === 'description' ? 'border-b-2 border-blue-600 text-blue-600 font-bold' : 'text-slate-500 font-medium hover:text-slate-900 dark:hover:text-white transition-colors'" class="py-3 px-2">Description</button>
+        <button @click="activeTab = 'reviews'" :class="activeTab === 'reviews' ? 'border-b-2 border-blue-600 text-blue-600 font-bold' : 'text-slate-500 font-medium hover:text-slate-900 dark:hover:text-white transition-colors'" class="py-3 px-2">Reviews ({{ product.reviews?.length || 0 }})</button>
       </div>
       
-      <div class="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+      <div v-if="activeTab === 'description'" class="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
         <p>{{ product.description }}</p>
         <p v-if="!product.description">No description available for this product.</p>
+      </div>
+
+      <div v-if="activeTab === 'reviews'">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-1 border-r border-slate-200 dark:border-slate-800 pr-6">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Customer Reviews</h3>
+                <div class="flex items-center space-x-2 mb-6">
+                    <span class="text-4xl font-black text-slate-900 dark:text-white">4.8</span>
+                    <div class="flex text-yellow-400">
+                        <svg v-for="i in 5" :key="i" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                    </div>
+                </div>
+
+                <div v-if="page.props.auth.user" class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <h4 class="font-bold text-slate-900 dark:text-white mb-2">Write a Review</h4>
+                    <p class="text-sm text-slate-500 mb-4">Share your thoughts with other customers</p>
+                    <form @submit.prevent="submitReview" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rating</label>
+                            <select v-model="reviewForm.rating" class="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm">
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Average</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Review</label>
+                            <textarea v-model="reviewForm.comment" rows="3" class="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm" placeholder="What did you like or dislike?"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Add Photos</label>
+                            <input type="file" multiple accept="image/*" @change="handleImageUpload" class="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                        </div>
+                        <button type="submit" :disabled="reviewForm.processing" class="w-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 py-2 rounded-md font-medium text-sm disabled:opacity-50">Submit Review</button>
+                    </form>
+                </div>
+                <div v-else class="text-sm text-slate-500">
+                    Please <Link :href="route('login')" class="text-blue-600 hover:underline">login</Link> to write a review.
+                </div>
+            </div>
+
+            <div class="md:col-span-2 space-y-6">
+                <div v-if="!product.reviews || product.reviews.length === 0" class="text-center py-8 text-slate-500">
+                    No reviews yet. Be the first to review this product!
+                </div>
+                <div v-else v-for="review in product.reviews" :key="review.id" class="border-b border-slate-200 dark:border-slate-800 pb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
+                                {{ review.user?.name?.charAt(0) || 'U' }}
+                            </div>
+                            <div>
+                                <div class="font-medium text-slate-900 dark:text-white flex items-center space-x-2">
+                                    <span>{{ review.user?.name || 'Unknown User' }}</span>
+                                    <span v-if="hasBought" class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full flex items-center">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                        Verified Buyer
+                                    </span>
+                                </div>
+                                <div class="text-xs text-slate-500">{{ new Date(review.created_at).toLocaleDateString() }}</div>
+                            </div>
+                        </div>
+                        <div class="flex text-yellow-400">
+                            <svg v-for="i in 5" :key="i" class="w-4 h-4" :class="i <= review.rating ? 'text-yellow-400' : 'text-slate-300'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                        </div>
+                    </div>
+                    <p class="text-slate-700 dark:text-slate-300 mt-3">{{ review.comment }}</p>
+                    <div v-if="review.images && review.images.length > 0" class="flex gap-2 mt-3 overflow-x-auto">
+                        <img v-for="(img, idx) in review.images" :key="idx" :src="img" class="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" />
+                    </div>
+                    <div class="mt-4 flex items-center space-x-4 text-sm text-slate-500">
+                        <button @click="voteReview(review.id)" class="flex items-center space-x-1 hover:text-blue-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                            <span>Helpful ({{ review.helpful_votes || 0 }})</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
 

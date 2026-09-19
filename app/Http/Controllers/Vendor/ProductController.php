@@ -54,6 +54,7 @@ class ProductController extends Controller
             'image' => 'nullable|image|max:2048',
             'colors' => 'nullable|string', // Could come as comma-separated string from FormData
             'sizes' => 'nullable|string',
+            'status' => 'required|in:active,inactive',
         ]);
 
         $data = $request->except(['image', 'colors', 'sizes']);
@@ -114,23 +115,34 @@ class ProductController extends Controller
         $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
         $product = \App\Models\Product::where('vendor_id', $vendor->id)->findOrFail($id);
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:products,slug,'.$product->id,
-            'category_id' => 'required|exists:categories,id',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'colors' => 'nullable|string',
-            'sizes' => 'nullable|string',
-        ]);
+        $rules = [];
+        if ($request->has('title')) {
+            $rules = [
+                'title' => 'required|string|max:255',
+                'slug' => 'required|string|max:255|unique:products,slug,'.$product->id,
+                'category_id' => 'required|exists:categories,id',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|max:2048',
+                'colors' => 'nullable|string',
+                'sizes' => 'nullable|string',
+            ];
+        }
+        if ($request->has('status')) {
+            $rules['status'] = 'required|in:active,inactive';
+        }
+
+        $request->validate($rules);
 
         $data = $request->except(['image', 'colors', 'sizes']);
         
-        // Handle JSON arrays from string input
-        $data['colors'] = $request->colors ? array_map('trim', explode(',', $request->colors)) : [];
-        $data['sizes'] = $request->sizes ? array_map('trim', explode(',', $request->sizes)) : [];
+        if ($request->has('colors')) {
+            $data['colors'] = $request->colors ? array_map('trim', explode(',', $request->colors)) : [];
+        }
+        if ($request->has('sizes')) {
+            $data['sizes'] = $request->sizes ? array_map('trim', explode(',', $request->sizes)) : [];
+        }
 
         $product->update($data);
 

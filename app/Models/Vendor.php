@@ -6,7 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vendor extends Model
 {
-    protected $fillable = ['user_id', 'store_name', 'slug', 'description', 'logo', 'rating', 'is_verified'];
+    protected $fillable = [
+        'user_id',
+        'store_name',
+        'slug',
+        'description',
+        'logo',
+        'rating',
+        'is_verified',
+        'status',
+    ];
 
     protected function casts(): array
     {

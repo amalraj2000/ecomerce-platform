@@ -4,6 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
+import AddressBook from './Partials/AddressBook.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -14,6 +15,10 @@ defineProps({
     status: {
         type: String,
     },
+    addresses: {
+        type: Array,
+        default: () => []
+    }
 });
 
 const page = usePage();
@@ -44,6 +49,11 @@ const layoutComponent = computed(() => {
                         :status="status"
                         class="max-w-2xl"
                     />
+                </div>
+
+                <!-- Address Book -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+                    <AddressBook :addresses="addresses" />
                 </div>
 
                 <!-- Update Password -->

@@ -21,6 +21,7 @@ const form = useForm({
     name: props.category.name || '',
     slug: props.category.slug || '',
     parent_id: props.category.parent_id || '',
+    status: props.category.status || 'active',
 });
 
 const submit = () => {
@@ -82,7 +83,20 @@ const submit = () => {
                             <InputError class="mt-2" :message="form.errors.parent_id" />
                         </div>
 
-                        <div class="flex items-center justify-end">
+                        <div>
+                            <InputLabel for="status" value="Status" />
+                            <select
+                                id="status"
+                                v-model="form.status"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            >
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <InputError class="mt-2" :message="form.errors.status" />
+                        </div>
+
+                        <div class="flex items-center justify-end pt-4 border-t">
                             <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
                                 Update Category
                             </PrimaryButton>

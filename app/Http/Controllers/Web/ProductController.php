@@ -23,9 +23,18 @@ class ProductController extends Controller
             ->take(5)
             ->get();
 
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $hasBought = false;
+        if ($user) {
+            $hasBought = \App\Models\OrderItem::whereHas('order', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->where('product_id', $product->id)->exists();
+        }
+
         return Inertia::render('Web/ProductDetail', [
             'product' => $product,
-            'relatedProducts' => $relatedProducts
+            'relatedProducts' => $relatedProducts,
+            'hasBought' => $hasBought
         ]);
     }
 }

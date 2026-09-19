@@ -7,60 +7,52 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $users = \App\Models\User::latest()->paginate(10);
+        $users = \App\Models\User::latest()
+        ->where('role', 'user')
+        ->paginate(10);
         return \Inertia\Inertia::render('Admin/Users/Index', ['users' => $users]);
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        //
+        $user = \App\Models\User::findOrFail($id);
+        return \Inertia\Inertia::render('Admin/Users/Edit', [
+            'user' => $user
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $user = \App\Models\User::findOrFail($id);
+        
+        $rules = [];
+        if ($request->has('name')) {
+            $rules['name'] = 'required|string|max:255';
+            $rules['email'] = 'required|email|max:255|unique:users,email,' . $user->id;
+        }
+        if ($request->has('status')) {
+            $rules['status'] = 'required|in:active,inactive';
+        }
+        
+        $request->validate($rules);
+
+        $user->update($request->only(['name', 'email', 'status']));
+
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $user = \App\Models\User::findOrFail($id);
+        
+        // Ensure not deleting the last admin or something, but this is a user module so it's mainly for 'user' role.
+        if ($user->role === 'admin') {
+            return redirect()->back()->with('error', 'Cannot delete an admin account from here.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
 }

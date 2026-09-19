@@ -41,12 +41,20 @@ class OrderController extends Controller
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
+        if (!$vendor) {
+            abort(403, 'Vendor profile not found.');
+        }
+
+        $order = \App\Models\Order::with(['user', 'address', 'items.product.images'])
+            ->where('vendor_id', $vendor->id)
+            ->findOrFail($id);
+            
+        return \Inertia\Inertia::render('Vendor/Orders/Show', [
+            'order' => $order
+        ]);
     }
 
     /**
@@ -57,12 +65,24 @@ class OrderController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
+        if (!$vendor) {
+            abort(403, 'Vendor profile not found.');
+        }
+
+        $order = \App\Models\Order::where('vendor_id', $vendor->id)->findOrFail($id);
+        
+        $request->validate([
+            'status' => 'required|in:pending,accepted,processing,shipped,delivered,cancelled'
+        ]);
+
+        $order->update([
+            'status' => $request->status
+        ]);
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
     /**

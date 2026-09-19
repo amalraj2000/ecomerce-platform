@@ -11,6 +11,15 @@ defineProps({
     },
 });
 
+const toggleStatus = (category) => {
+    router.put(route('admin.categories.update', category.id), {
+        name: category.name,
+        slug: category.slug,
+        parent_id: category.parent_id,
+        status: category.status === 'active' ? 'inactive' : 'active'
+    }, { preserveScroll: true });
+};
+
 const deleteCategory = (id) => {
     Swal.fire({
         title: 'Are you sure?',
@@ -55,7 +64,7 @@ const deleteCategory = (id) => {
                                     <th class="py-4 px-6 font-medium text-gray-900">Name</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Slug</th>
                                     <th class="py-4 px-6 font-medium text-gray-900">Parent Category</th>
-                                    <th class="py-4 px-6 font-medium text-gray-900">Created At</th>
+                                    <th class="py-4 px-6 font-medium text-gray-900">Status</th>
                                     <th class="py-4 px-6 font-medium text-gray-900 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -69,7 +78,11 @@ const deleteCategory = (id) => {
                                         </span>
                                         <span v-else class="text-gray-400 text-sm">None</span>
                                     </td>
-                                    <td class="py-4 px-6 text-gray-500 text-sm">{{ new Date(category.created_at).toLocaleDateString() }}</td>
+                                    <td class="py-4 px-6">
+                                        <span class="capitalize text-xs px-2 py-1 rounded-full cursor-pointer" @click="toggleStatus(category)" :class="category.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                                            {{ category.status || 'active' }}
+                                        </span>
+                                    </td>
                                     <td class="py-4 px-6 text-right space-x-3">
                                         <Link :href="route('admin.categories.edit', category.id)" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</Link>
                                         <button @click="deleteCategory(category.id)" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>

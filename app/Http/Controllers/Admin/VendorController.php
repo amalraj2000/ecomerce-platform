@@ -66,15 +66,34 @@ class VendorController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $vendor = \App\Models\Vendor::with('user')->findOrFail($id);
+        return \Inertia\Inertia::render('Admin/Vendors/Edit', [
+            'vendor' => $vendor
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $vendor = \App\Models\Vendor::findOrFail($id);
+        
+        $rules = [];
+        if ($request->has('store_name')) {
+            $rules['store_name'] = 'required|string|max:255';
+            $rules['slug'] = 'required|string|max:255|unique:vendors,slug,' . $vendor->id;
+            $rules['description'] = 'nullable|string';
+        }
+        if ($request->has('status')) {
+            $rules['status'] = 'required|in:active,inactive';
+        }
+        if ($request->has('is_verified')) {
+            $rules['is_verified'] = 'boolean';
+        }
+        
+        $request->validate($rules);
+
+        $vendor->update($request->only(['store_name', 'slug', 'description', 'status', 'is_verified']));
+
+        return redirect()->route('admin.vendors.index')->with('success', 'Vendor updated successfully.');
     }
 
     /**
@@ -82,6 +101,14 @@ class VendorController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $vendor = \App\Models\Vendor::findOrFail($id);
+        
+        if ($vendor->products()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete this vendor because they have products.');
+        }
+
+        $vendor->delete();
+
+        return redirect()->route('admin.vendors.index')->with('success', 'Vendor deleted successfully.');
     }
 }

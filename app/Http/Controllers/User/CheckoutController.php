@@ -18,7 +18,8 @@ class CheckoutController extends Controller
         }
 
         return \Inertia\Inertia::render('User/Checkout/Index', [
-            'cart' => $cart
+            'cart' => $cart,
+            'addresses' => $user->addresses
         ]);
     }
 
@@ -29,6 +30,16 @@ class CheckoutController extends Controller
 
         if (!$cart || $cart->items->isEmpty()) {
             return redirect()->back()->with('error', 'Cart is empty');
+        }
+
+        $request->validate([
+            'address_id' => 'required|exists:addresses,id'
+        ]);
+
+        // Ensure address belongs to user
+        $address = $user->addresses()->where('id', $request->address_id)->first();
+        if (!$address) {
+            return redirect()->back()->with('error', 'Invalid address selected.');
         }
 
         // Calculate total amount
@@ -42,21 +53,6 @@ class CheckoutController extends Controller
         // A multi-vendor system might split this by vendor, but we'll use the first item's vendor
         $firstItemVendorId = $cart->items->first()->product->vendor_id;
         
-        // Auto-create a mock address if the user doesn't have one
-        $address = \App\Models\Address::firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'name' => $user->name,
-                'phone' => '555-0100',
-                'street' => '123 Main St',
-                'city' => 'Metropolis',
-                'state' => 'NY',
-                'zip' => '10001',
-                'country' => 'USA',
-                'is_default' => true
-            ]
-        );
-
         $order = \App\Models\Order::create([
             'user_id' => $user->id,
             'vendor_id' => $firstItemVendorId,
