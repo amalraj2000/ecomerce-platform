@@ -172,10 +172,10 @@ const issueRefund = (transaction) => {
 
                                     <td class="py-4 px-4">
                                         <span
-                                            v-if="t.refund_status === 'refunded'"
-                                            class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800"
+                                            v-if="t.status === 'cancelled' || t.refund_status === 'refunded'"
+                                            class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800"
                                         >
-                                            Refunded
+                                            Cancelled &amp; Refunded
                                         </span>
                                         <span
                                             v-else-if="t.status === 'paid' || t.status === 'delivered' || t.status === 'shipped' || t.status === 'out_for_delivery' || t.status === 'processing' || t.status === 'accepted'"

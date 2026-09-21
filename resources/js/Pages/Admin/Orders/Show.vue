@@ -41,8 +41,13 @@ const issueRefund = () => {
                     <span class="text-gray-400">/</span>
                     <span>Order #{{ order.id }}</span>
                 </h2>
-                <span class="capitalize bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-sm">
-                    {{ order.status }}
+                <span
+                    :class="[
+                        'capitalize px-3 py-1 rounded-full font-bold text-sm',
+                        (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                    ]"
+                >
+                    {{ (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : order.status.replace('_', ' ') }}
                 </span>
             </div>
         </template>

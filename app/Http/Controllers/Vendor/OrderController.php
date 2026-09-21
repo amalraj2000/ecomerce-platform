@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Events\OrderStatusUpdated;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -11,9 +12,6 @@ use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $vendor = Auth::user()->vendorProfile;
@@ -27,22 +25,6 @@ class OrderController extends Controller
             ->paginate(10);
 
         return Inertia::render('Vendor/Orders/Index', ['orders' => $orders]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
     }
 
     public function show(string $id)
@@ -61,14 +43,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
     public function update(Request $request, string $id)
     {
         $vendor = Auth::user()->vendorProfile;
@@ -82,6 +56,15 @@ class OrderController extends Controller
             'status' => 'required|in:pending,paid,accepted,processing,shipped,out_for_delivery,delivered,cancelled',
         ]);
 
+        if ($request->status === 'cancelled') {
+            $result = app(AdminOrderController::class)->performRefundAndCancel($order);
+            if (! $result['success']) {
+                return redirect()->back()->with('error', $result['message']);
+            }
+
+            return redirect()->back()->with('success', $result['message']);
+        }
+
         $order->update([
             'status' => $request->status,
         ]);
@@ -89,13 +72,5 @@ class OrderController extends Controller
         broadcast(new OrderStatusUpdated($order->fresh()));
 
         return redirect()->back()->with('success', 'Order status updated successfully.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Events\OrderStatusUpdated;
+use App\Events\StockUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -24,22 +25,6 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Index', ['orders' => $orders]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
     public function show(string $id)
     {
         $order = Order::with(['user', 'vendor', 'address', 'items.product.images'])->findOrFail($id);
@@ -47,14 +32,6 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
         ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     public function update(Request $request, string $id)
@@ -65,8 +42,16 @@ class OrderController extends Controller
             'status' => 'required|in:pending,paid,accepted,processing,shipped,out_for_delivery,delivered,cancelled',
         ]);
 
-        $order->update(['status' => $request->status]);
+        if ($request->status === 'cancelled') {
+            $result = $this->performRefundAndCancel($order);
+            if (! $result['success']) {
+                return redirect()->back()->with('error', $result['message']);
+            }
 
+            return redirect()->back()->with('success', $result['message']);
+        }
+
+        $order->update(['status' => $request->status]);
         broadcast(new OrderStatusUpdated($order->fresh()));
 
         return redirect()->back()->with('success', 'Order status updated successfully.');
@@ -79,36 +64,54 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if (! $order->stripe_payment_intent_id) {
-            return redirect()->back()->with('error', 'This order has no Stripe payment to refund.');
+        $result = $this->performRefundAndCancel($order);
+        if (! $result['success']) {
+            return redirect()->back()->with('error', $result['message']);
         }
 
-        if ($order->refund_status === 'refunded') {
-            return redirect()->back()->with('error', 'This order has already been refunded.');
-        }
-
-        Stripe::setApiKey(config('stripe.secret'));
-
-        try {
-            Refund::create([
-                'payment_intent' => $order->stripe_payment_intent_id,
-            ]);
-        } catch (ApiErrorException $e) {
-            Log::error('Stripe refund failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
-
-            return redirect()->back()->with('error', 'Refund failed: '.$e->getMessage());
-        }
-
-        $order->update(['refund_status' => 'requested']);
-
-        return redirect()->back()->with('success', 'Refund initiated successfully. Stripe will confirm shortly.');
+        return redirect()->back()->with('success', $result['message']);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Helper to perform Stripe refund, restock items, set refund_status to refunded, and broadcast events.
      */
-    public function destroy(string $id)
+    public function performRefundAndCancel(Order $order): array
     {
-        //
+        if ($order->refund_status === 'refunded' && $order->status === 'cancelled') {
+            return ['success' => true, 'message' => 'Order is already cancelled and refunded.'];
+        }
+
+        // Attempt Stripe Refund if payment intent exists
+        if ($order->stripe_payment_intent_id && $order->refund_status !== 'refunded') {
+            Stripe::setApiKey(config('stripe.secret'));
+
+            try {
+                Refund::create([
+                    'payment_intent' => $order->stripe_payment_intent_id,
+                ]);
+            } catch (ApiErrorException $e) {
+                Log::error('Stripe refund failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+
+                return ['success' => false, 'message' => 'Stripe refund failed: '.$e->getMessage()];
+            }
+        }
+
+        // Restock items if cancelling an active order
+        if ($order->status !== 'cancelled') {
+            foreach ($order->items as $item) {
+                $item->product->increment('stock', $item->quantity);
+                broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+            }
+        }
+
+        $order->update([
+            'status' => 'cancelled',
+            'refund_status' => 'refunded',
+            'refunded_at' => now(),
+        ]);
+
+        broadcast(new OrderStatusUpdated($order->fresh()));
+
+        return ['success' => true, 'message' => 'Order cancelled and payment refunded successfully via Stripe.'];
     }
 }

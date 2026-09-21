@@ -120,7 +120,7 @@ onUnmounted(() => {
                         </div>
                         <div class="flex items-center gap-3">
                             <span :class="['text-xs font-bold px-3 py-1 rounded-full border capitalize', statusColor(currentStatus(order))]">
-                                {{ currentStatus(order).replace('_', ' ') }}
+                                {{ (currentStatus(order) === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : currentStatus(order).replace('_', ' ') }}
                             </span>
                             <p class="text-sm text-gray-500">ORD-{{ order.id.toString().padStart(6, '0') }}</p>
                         </div>
