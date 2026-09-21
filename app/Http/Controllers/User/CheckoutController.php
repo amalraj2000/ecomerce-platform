@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Events\OrderStatusUpdated;
+use App\Events\StockUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\StripeWebhookController;
 use App\Models\Cart;
+use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Stripe\Checkout\Session as StripeSession;
@@ -33,7 +38,7 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Create a Stripe Checkout Session and redirect the user to Stripe's hosted page.
+     * Handle order placement (COD or Stripe Online Payment).
      */
     public function store(Request $request)
     {
@@ -46,6 +51,7 @@ class CheckoutController extends Controller
 
         $request->validate([
             'address_id' => 'required|exists:addresses,id',
+            'payment_method' => 'required|in:stripe,cod',
         ]);
 
         $address = $user->addresses()->where('id', $request->address_id)->first();
@@ -53,9 +59,62 @@ class CheckoutController extends Controller
             return redirect()->back()->with('error', 'Invalid address selected.');
         }
 
+        // Cash on Delivery (COD)
+        if ($request->payment_method === 'cod') {
+            DB::transaction(function () use ($cart, $user, $address) {
+                $total = $cart->items->sum(function ($item) {
+                    return $item->product->price
+                        * (1 - $item->product->discount_percentage / 100)
+                        * $item->quantity;
+                });
+
+                $firstItemVendorId = $cart->items->first()->product->vendor_id;
+
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'vendor_id' => $firstItemVendorId,
+                    'total_amount' => $total,
+                    'status' => 'pending',
+                    'payment_method' => 'cod',
+                    'shipping_address_id' => $address->id,
+                ]);
+
+                foreach ($cart->items as $item) {
+                    $itemPrice = $item->product->price * (1 - $item->product->discount_percentage / 100);
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $itemPrice,
+                    ]);
+
+                    // Deduct stock and broadcast live update
+                    $item->product->decrement('stock', $item->quantity);
+                    try {
+                        broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+                    } catch (\Exception $e) {
+                        Log::warning('Reverb broadcast warning for stock update: '.$e->getMessage());
+                    }
+                }
+
+                // Clear cart
+                $cart->items()->delete();
+
+                // Broadcast order status update
+                try {
+                    broadcast(new OrderStatusUpdated($order));
+                } catch (\Exception $e) {
+                    Log::warning('Reverb broadcast warning for order status: '.$e->getMessage());
+                }
+            });
+
+            return redirect()->route('checkout.success')->with('success', 'Order placed successfully with Cash on Delivery!');
+        }
+
+        // Stripe Online Payment
         Stripe::setApiKey(config('stripe.secret'));
 
-        // Build Stripe line items from cart
         $lineItems = $cart->items->map(function ($item) {
             $unitAmount = (int) round(
                 $item->product->price * (1 - $item->product->discount_percentage / 100) * 100
@@ -82,10 +141,10 @@ class CheckoutController extends Controller
             'metadata' => [
                 'user_id' => $user->id,
                 'address_id' => $address->id,
+                'payment_method' => 'stripe',
             ],
         ]);
 
-        // Store session ID so we can verify on success page
         session(['stripe_checkout_session_id' => $session->id]);
 
         return Inertia::location($session->url);

@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     orders: Object,
@@ -9,6 +10,22 @@ const props = defineProps({
 
 const page = usePage();
 const flashSuccess = computed(() => page.props.flash?.success);
+
+const cancelOrder = (orderId) => {
+    Swal.fire({
+        title: 'Cancel Order?',
+        text: 'Are you sure you want to cancel this order? Stock will be restored and payment refunded if applicable.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, cancel order',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('user.orders.cancel', orderId), {}, { preserveScroll: true });
+        }
+    });
+};
 
 // Live order status updates via Reverb
 const liveStatuses = ref({});
@@ -119,9 +136,19 @@ onUnmounted(() => {
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
+                            <Link :href="route('user.orders.show', order.id)" class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs rounded-lg border border-blue-200 transition">
+                                👁️ View Details
+                            </Link>
                             <a :href="route('orders.invoice', order.id)" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg border border-indigo-200 transition">
                                 📄 Invoice PDF
                             </a>
+                            <button
+                                v-if="!['delivered', 'cancelled'].includes(currentStatus(order))"
+                                @click="cancelOrder(order.id)"
+                                class="inline-flex items-center gap-1 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs rounded-lg border border-red-200 transition"
+                            >
+                                🚫 Cancel Order
+                            </button>
                             <span :class="['text-xs font-bold px-3 py-1 rounded-full border capitalize', statusColor(currentStatus(order))]">
                                 {{ (currentStatus(order) === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : currentStatus(order).replace('_', ' ') }}
                             </span>

@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   product: Object,
@@ -63,8 +64,6 @@ const discountedPrice = computed(() => {
   return (props.product.price * (1 - props.product.discount_percentage / 100)).toFixed(2);
 });
 
-import { useForm, usePage } from '@inertiajs/vue3';
-
 const page = usePage();
 
 const cartForm = useForm({
@@ -75,13 +74,23 @@ const cartForm = useForm({
 });
 
 const addToCart = () => {
-    if (!page.props.auth.user) {
+    if (!page.props.auth?.user) {
         window.location.href = route('login');
         return;
     }
     cartForm.post(route('cart.store'), {
-        preserveScroll: true
-      });
+        preserveScroll: true,
+        onSuccess: () => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Added to cart!',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        },
+    });
 };
 
 const buyNow = () => {
@@ -93,17 +102,24 @@ const buyNow = () => {
         onSuccess: () => window.location.href = route('checkout.index'),
     });
 };
-const wishlistForm = useForm({
-    product_id: props.product.id
-});
 
 const addToWishlist = () => {
     if (!page.props.auth.user) {
         window.location.href = route('login');
         return;
     }
-    wishlistForm.post(route('wishlist.store'), {
-        preserveScroll: true
+    router.post(route('wishlist.toggle', props.product.id), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Wishlist updated!',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        },
     });
 };
 

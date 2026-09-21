@@ -23,6 +23,7 @@ const defaultAddress = computed(() => {
 
 const checkoutForm = useForm({
     address_id: defaultAddress.value ? defaultAddress.value.id : null,
+    payment_method: 'stripe',
 });
 
 import axios from 'axios';
@@ -146,6 +147,31 @@ const submitNewAddress = () => {
                             </label>
                             <div v-if="checkoutForm.errors.address_id" class="text-red-500 text-sm">{{ checkoutForm.errors.address_id }}</div>
                         </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h2 class="text-xl font-semibold mb-4">Select Payment Method</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <label class="flex items-center p-4 border rounded-xl cursor-pointer transition-all"
+                                   :class="checkoutForm.payment_method === 'stripe' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500' : 'border-gray-200 hover:border-blue-300'">
+                                <input type="radio" v-model="checkoutForm.payment_method" value="stripe" class="form-radio text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="font-bold text-gray-900 flex items-center gap-1.5">💳 Pay Online (Stripe)</span>
+                                    <p class="text-xs text-gray-500 mt-0.5">Credit/Debit Cards, instant confirmation</p>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center p-4 border rounded-xl cursor-pointer transition-all"
+                                   :class="checkoutForm.payment_method === 'cod' ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500' : 'border-gray-200 hover:border-emerald-300'">
+                                <input type="radio" v-model="checkoutForm.payment_method" value="cod" class="form-radio text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="font-bold text-gray-900 flex items-center gap-1.5">💵 Cash on Delivery (COD)</span>
+                                    <p class="text-xs text-gray-500 mt-0.5">Pay in cash when package is delivered</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div v-if="checkoutForm.errors.payment_method" class="text-red-500 text-sm mt-2">{{ checkoutForm.errors.payment_method }}</div>
                     </div>
 
                     <!-- Order Summary & Promo Code -->

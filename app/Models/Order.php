@@ -13,6 +13,7 @@ class Order extends Model
         'vendor_id',
         'total_amount',
         'status',
+        'payment_method',
         'shipping_address_id',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',

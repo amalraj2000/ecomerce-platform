@@ -12,22 +12,17 @@ use App\Http\Controllers\User\ReviewController;
 use App\Http\Controllers\User\WishlistController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('home');
     })->name('dashboard');
-    Route::get('/orders', [OrderController::class, 'index'])->name('user.orders');
-    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice');
+
     Route::resource('addresses', AddressController::class);
 
     // Cart and Checkout
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'store'])->name('cart.store');
     Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
-
-    // Wishlist
-    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
@@ -37,17 +32,22 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
 
     // Reviews
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-});
 
-Route::middleware('auth')->group(function () {
+    // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('user.orders');
-    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice.download');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('user.orders.show');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel');
+    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice');
+
+    // Wishlist
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+    // Chat
     Route::get('/chat/messages/{user}', [ChatController::class, 'messages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
-    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
-});
 
-Route::middleware('auth')->group(function () {
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

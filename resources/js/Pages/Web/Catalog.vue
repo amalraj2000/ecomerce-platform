@@ -1,8 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   products: Object,
@@ -10,6 +10,7 @@ const props = defineProps({
   filters: Object
 });
 
+const page = usePage();
 const search = ref(props.filters.search || '');
 const category = ref(props.filters.category || '');
 const min_price = ref(props.filters.min_price || '');
@@ -38,14 +39,23 @@ watch(() => props.filters, (newFilters) => {
   max_price.value = newFilters.max_price || '';
 }, { deep: true });
 
-const wishlistForm = useForm({
-  product_id: null
-});
-
 const addToWishlist = (productId) => {
-  wishlistForm.product_id = productId;
-  wishlistForm.post(route('wishlist.store'), {
-    preserveScroll: true
+  if (!page.props.auth?.user) {
+    window.location.href = route('login');
+    return;
+  }
+  router.post(route('wishlist.toggle', productId), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Wishlist updated!',
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    },
   });
 };
 </script>
