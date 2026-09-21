@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Vendor\OrderController;
 use App\Http\Controllers\Vendor\ProductController;
 use App\Http\Controllers\Vendor\TransactionController;
@@ -23,4 +24,5 @@ Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('
     Route::resource('products', ProductController::class);
     Route::resource('orders', OrderController::class);
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('chat', [ChatController::class, 'vendorIndex'])->name('chat.index');
 });

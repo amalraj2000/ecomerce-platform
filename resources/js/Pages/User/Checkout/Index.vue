@@ -25,6 +25,34 @@ const checkoutForm = useForm({
     address_id: defaultAddress.value ? defaultAddress.value.id : null,
 });
 
+import axios from 'axios';
+import { ref, watch } from 'vue';
+
+const couponCode = ref('');
+const appliedDiscount = ref(0);
+const appliedCouponMessage = ref('');
+const couponError = ref('');
+
+const applyCoupon = async () => {
+    couponError.value = '';
+    appliedCouponMessage.value = '';
+    try {
+        const response = await axios.post(route('checkout.coupon'), {
+            code: couponCode.value,
+            subtotal: subtotal.value,
+        });
+        appliedDiscount.value = response.data.discount;
+        appliedCouponMessage.value = response.data.message;
+    } catch (e) {
+        couponError.value = e.response?.data?.message || 'Failed to apply promo code.';
+        appliedDiscount.value = 0;
+    }
+};
+
+const finalTotal = computed(() => {
+    return Math.max(0, subtotal.value - appliedDiscount.value);
+});
+
 const placeOrder = () => {
     checkoutForm.post(route('checkout.store'));
 };
@@ -32,7 +60,6 @@ const placeOrder = () => {
 import Modal from '@/Components/Modal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
-import { ref, watch } from 'vue';
 
 watch(() => props.addresses, (newAddresses) => {
     if (!checkoutForm.address_id && newAddresses.length > 0) {
@@ -121,7 +148,7 @@ const submitNewAddress = () => {
                         </div>
                     </div>
 
-                    <!-- Order Summary -->
+                    <!-- Order Summary & Promo Code -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
                         <ul class="divide-y divide-gray-200 mb-4">
@@ -133,9 +160,42 @@ const submitNewAddress = () => {
                                 <span class="text-gray-900">${{ (getPrice(item) * item.quantity).toFixed(2) }}</span>
                             </li>
                         </ul>
-                        <div class="border-t border-gray-200 pt-4 flex justify-between text-lg font-bold">
-                            <span>Total</span>
-                            <span>${{ subtotal.toFixed(2) }}</span>
+
+                        <!-- Promo Code Input -->
+                        <div class="border-t border-gray-200 pt-4 mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Have a promo code?</label>
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="couponCode"
+                                    type="text"
+                                    placeholder="Enter coupon (e.g. SAVE20)"
+                                    class="uppercase rounded-xl border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 flex-1"
+                                />
+                                <button
+                                    type="button"
+                                    @click="applyCoupon"
+                                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-xl transition"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                            <p v-if="appliedCouponMessage" class="text-xs text-emerald-600 font-semibold mt-1">✓ {{ appliedCouponMessage }}</p>
+                            <p v-if="couponError" class="text-xs text-red-500 font-semibold mt-1">✕ {{ couponError }}</p>
+                        </div>
+
+                        <div class="border-t border-gray-200 pt-4 space-y-2">
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span>Subtotal</span>
+                                <span>${{ subtotal.toFixed(2) }}</span>
+                            </div>
+                            <div v-if="appliedDiscount > 0" class="flex justify-between text-sm text-emerald-600 font-semibold">
+                                <span>Discount</span>
+                                <span>-${{ appliedDiscount.toFixed(2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-lg font-black text-gray-900 pt-2 border-t">
+                                <span>Total Payable</span>
+                                <span>${{ finalTotal.toFixed(2) }}</span>
+                            </div>
                         </div>
                     </div>
                     

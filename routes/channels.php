@@ -10,3 +10,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('orders.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
+
+// Private channel for real-time chat — only accessible by message recipient
+Broadcast::channel('chat.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

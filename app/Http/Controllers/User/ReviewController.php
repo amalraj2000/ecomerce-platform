@@ -3,50 +3,42 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request, Product $product)
     {
+        $user = Auth::user();
+
         $request->validate([
-            'product_id' => 'required|exists:products,id',
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|max:1000',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
+            'comment' => 'nullable|string|max:1000',
         ]);
 
-        // Check if user bought the product (Verified Buyer logic)
-        $user = \Illuminate\Support\Facades\Auth::user();
-        $hasBought = \App\Models\OrderItem::whereHas('order', function($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->where('product_id', $request->product_id)->exists();
+        // Check if user has purchased this product
+        $hasPurchased = Order::where('user_id', $user->id)
+            ->whereIn('status', ['paid', 'accepted', 'processing', 'shipped', 'out_for_delivery', 'delivered'])
+            ->whereHas('items', function ($q) use ($product) {
+                $q->where('product_id', $product->id);
+            })->exists();
 
-        // Even if they didn't buy, let's let them review for now but we will use this logic in the frontend to show the badge
-
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('reviews', 'public');
-                $imagePaths[] = '/storage/' . $path;
-            }
+        if (! $hasPurchased && $user->role !== 'admin') {
+            return redirect()->back()->with('error', 'You can only review products you have purchased.');
         }
 
-        \App\Models\Review::create([
-            'user_id' => $user->id,
-            'product_id' => $request->product_id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-            'images' => $imagePaths
-        ]);
+        Review::updateOrCreate(
+            ['user_id' => $user->id, 'product_id' => $product->id],
+            [
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+            ]
+        );
 
-        return redirect()->back()->with('success', 'Review submitted successfully!');
-    }
-
-    public function vote(Request $request, $id)
-    {
-        $review = \App\Models\Review::findOrFail($id);
-        $review->increment('helpful_votes');
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Thank you! Your review has been published.');
     }
 }

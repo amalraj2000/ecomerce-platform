@@ -119,6 +119,9 @@ onUnmounted(() => {
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
+                            <a :href="route('orders.invoice', order.id)" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg border border-indigo-200 transition">
+                                📄 Invoice PDF
+                            </a>
                             <span :class="['text-xs font-bold px-3 py-1 rounded-full border capitalize', statusColor(currentStatus(order))]">
                                 {{ (currentStatus(order) === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : currentStatus(order).replace('_', ' ') }}
                             </span>

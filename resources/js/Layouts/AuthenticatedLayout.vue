@@ -50,6 +50,7 @@ const showingNavigationDropdown = ref(false);
                                     <NavLink :href="route('admin.users.index')" :active="route().current('admin.users.*')">Users</NavLink>
                                     <NavLink :href="route('admin.orders.index')" :active="route().current('admin.orders.*')">Orders</NavLink>
                                     <NavLink :href="route('admin.transactions.index')" :active="route().current('admin.transactions.*')">Transactions</NavLink>
+                                    <NavLink :href="route('admin.coupons.index')" :active="route().current('admin.coupons.*')">Coupons</NavLink>
                                 </template>
 
                                 <!-- Vendor Modules -->
@@ -57,6 +58,7 @@ const showingNavigationDropdown = ref(false);
                                     <NavLink :href="route('vendor.products.index')" :active="route().current('vendor.products.*')">Products</NavLink>
                                     <NavLink :href="route('vendor.orders.index')" :active="route().current('vendor.orders.*')">Orders</NavLink>
                                     <NavLink :href="route('vendor.transactions.index')" :active="route().current('vendor.transactions.*')">Transactions</NavLink>
+                                    <NavLink :href="route('vendor.chat.index')" :active="route().current('vendor.chat.*')">Chat</NavLink>
                                 </template>
 
                                 <!-- User Modules -->

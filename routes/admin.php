@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\TransactionController;
@@ -33,6 +34,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::resource('vendors', VendorController::class);
     Route::resource('users', UserController::class);
     Route::resource('orders', OrderController::class);
+    Route::resource('coupons', CouponController::class)->except(['create', 'edit', 'update']);
     Route::post('orders/{order}/refund', [OrderController::class, 'refund'])->name('orders.refund');
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
 });

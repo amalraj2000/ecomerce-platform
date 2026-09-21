@@ -41,14 +41,19 @@ const issueRefund = () => {
                     <span class="text-gray-400">/</span>
                     <span>Order #{{ order.id }}</span>
                 </h2>
-                <span
-                    :class="[
-                        'capitalize px-3 py-1 rounded-full font-bold text-sm',
-                        (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                    ]"
-                >
-                    {{ (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : order.status.replace('_', ' ') }}
-                </span>
+                <div class="flex items-center space-x-3">
+                    <a :href="route('orders.invoice', order.id)" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-gray-50 text-indigo-600 font-semibold text-xs rounded-xl border border-indigo-200 shadow-sm transition">
+                        📄 Invoice PDF
+                    </a>
+                    <span
+                        :class="[
+                            'capitalize px-3 py-1 rounded-full font-bold text-sm',
+                            (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                        ]"
+                    >
+                        {{ (order.status === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : order.status.replace('_', ' ') }}
+                    </span>
+                </div>
             </div>
         </template>
 

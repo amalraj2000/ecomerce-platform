@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\User\AddressController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\CheckoutController;
+use App\Http\Controllers\User\InvoiceController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\ReviewController;
@@ -14,6 +17,7 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
         return redirect()->route('home');
     })->name('dashboard');
     Route::get('/orders', [OrderController::class, 'index'])->name('user.orders');
+    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice');
     Route::resource('addresses', AddressController::class);
 
     // Cart and Checkout
@@ -23,17 +27,23 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
 
     // Wishlist
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/add', [WishlistController::class, 'store'])->name('wishlist.store');
-    Route::delete('/wishlist/{item}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/coupon', [CouponController::class, 'apply'])->name('checkout.coupon');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
     // Reviews
-    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::post('/reviews/{id}/vote', [ReviewController::class, 'vote'])->name('reviews.vote');
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice.download');
+    Route::get('/chat/messages/{user}', [ChatController::class, 'messages'])->name('chat.messages');
+    Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
 Route::middleware('auth')->group(function () {
