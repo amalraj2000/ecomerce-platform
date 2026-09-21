@@ -94,14 +94,22 @@ class StripeWebhookController extends Controller
 
                 // Deduct stock and broadcast live update
                 $item->product->decrement('stock', $item->quantity);
-                broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+                try {
+                    broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+                } catch (\Exception $e) {
+                    Log::warning('Reverb broadcast warning for stock update: '.$e->getMessage());
+                }
             }
 
             // Clear cart
             $cart->items()->delete();
 
             // Broadcast order confirmation to user
-            broadcast(new OrderStatusUpdated($order));
+            try {
+                broadcast(new OrderStatusUpdated($order));
+            } catch (\Exception $e) {
+                Log::warning('Reverb broadcast warning for order status: '.$e->getMessage());
+            }
         });
     }
 

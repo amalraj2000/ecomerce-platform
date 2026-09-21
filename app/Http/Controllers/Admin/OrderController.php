@@ -100,7 +100,11 @@ class OrderController extends Controller
         if ($order->status !== 'cancelled') {
             foreach ($order->items as $item) {
                 $item->product->increment('stock', $item->quantity);
-                broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+                try {
+                    broadcast(new StockUpdated($item->product_id, $item->product->fresh()->stock));
+                } catch (\Exception $e) {
+                    Log::warning('Reverb broadcast warning for stock update: '.$e->getMessage());
+                }
             }
         }
 
@@ -110,7 +114,11 @@ class OrderController extends Controller
             'refunded_at' => now(),
         ]);
 
-        broadcast(new OrderStatusUpdated($order->fresh()));
+        try {
+            broadcast(new OrderStatusUpdated($order->fresh()));
+        } catch (\Exception $e) {
+            Log::warning('Reverb broadcast warning for order status: '.$e->getMessage());
+        }
 
         return ['success' => true, 'message' => 'Order cancelled and payment refunded successfully via Stripe.'];
     }

@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('user.orders');
     Route::get('/orders/{id}/invoice', [InvoiceController::class, 'download'])->name('orders.invoice.download');
     Route::get('/chat/messages/{user}', [ChatController::class, 'messages'])->name('chat.messages');
     Route::post('/chat/send', [ChatController::class, 'send'])->name('chat.send');
