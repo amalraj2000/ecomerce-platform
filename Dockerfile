@@ -41,5 +41,5 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-# Run migrations then start Supervisor (which manages Nginx and PHP-FPM)
-CMD ["/bin/sh", "-c", "php artisan migrate --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+# Run migrations, create storage symlink, then start Supervisor (which manages Nginx and PHP-FPM)
+CMD ["/bin/sh", "-c", "php artisan migrate --force && php artisan storage:link --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
