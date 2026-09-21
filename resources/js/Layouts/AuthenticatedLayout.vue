@@ -49,12 +49,14 @@ const showingNavigationDropdown = ref(false);
                                     <NavLink :href="route('admin.vendors.pending')" :active="route().current('admin.vendors.pending')">Pending Vendors</NavLink>
                                     <NavLink :href="route('admin.users.index')" :active="route().current('admin.users.*')">Users</NavLink>
                                     <NavLink :href="route('admin.orders.index')" :active="route().current('admin.orders.*')">Orders</NavLink>
+                                    <NavLink :href="route('admin.transactions.index')" :active="route().current('admin.transactions.*')">Transactions</NavLink>
                                 </template>
 
                                 <!-- Vendor Modules -->
                                 <template v-else-if="$page.props.auth.user.role === 'vendor'">
                                     <NavLink :href="route('vendor.products.index')" :active="route().current('vendor.products.*')">Products</NavLink>
                                     <NavLink :href="route('vendor.orders.index')" :active="route().current('vendor.orders.*')">Orders</NavLink>
+                                    <NavLink :href="route('vendor.transactions.index')" :active="route().current('vendor.transactions.*')">Transactions</NavLink>
                                 </template>
 
                                 <!-- User Modules -->
@@ -177,11 +179,13 @@ const showingNavigationDropdown = ref(false);
                             <ResponsiveNavLink :href="route('admin.vendors.pending')" :active="route().current('admin.vendors.pending')">Pending Vendors</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.users.index')" :active="route().current('admin.users.*')">Users</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.orders.index')" :active="route().current('admin.orders.*')">Orders</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.transactions.index')" :active="route().current('admin.transactions.*')">Transactions</ResponsiveNavLink>
                         </template>
 
                         <template v-else-if="$page.props.auth.user.role === 'vendor'">
                             <ResponsiveNavLink :href="route('vendor.products.index')" :active="route().current('vendor.products.*')">Products</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('vendor.orders.index')" :active="route().current('vendor.orders.*')">Orders</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('vendor.transactions.index')" :active="route().current('vendor.transactions.*')">Transactions</ResponsiveNavLink>
                         </template>
 
                         <template v-else>

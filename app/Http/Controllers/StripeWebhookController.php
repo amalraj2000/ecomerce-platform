@@ -34,7 +34,7 @@ class StripeWebhookController extends Controller
         }
 
         match ($event->type) {
-            'checkout.session.completed' => $this->handleCheckoutCompleted($event->data->object),
+            'checkout.session.completed' => $this->fulfillCheckoutSession($event->data->object),
             'charge.refunded' => $this->handleChargeRefunded($event->data->object),
             default => null,
         };
@@ -45,7 +45,7 @@ class StripeWebhookController extends Controller
     /**
      * Create order after successful Stripe Checkout payment.
      */
-    private function handleCheckoutCompleted(object $session): void
+    public function fulfillCheckoutSession(object $session): void
     {
         $userId = (int) $session->metadata->user_id;
         $addressId = (int) $session->metadata->address_id;

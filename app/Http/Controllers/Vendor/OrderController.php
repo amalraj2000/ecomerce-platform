@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class OrderController extends Controller
 {
@@ -12,17 +16,17 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
-        if (!$vendor) {
+        $vendor = Auth::user()->vendorProfile;
+        if (! $vendor) {
             abort(403, 'Vendor profile not found.');
         }
 
-        $orders = \App\Models\Order::where('vendor_id', $vendor->id)
+        $orders = Order::where('vendor_id', $vendor->id)
             ->with('user')
             ->latest()
             ->paginate(10);
-            
-        return \Inertia\Inertia::render('Vendor/Orders/Index', ['orders' => $orders]);
+
+        return Inertia::render('Vendor/Orders/Index', ['orders' => $orders]);
     }
 
     /**
@@ -43,17 +47,17 @@ class OrderController extends Controller
 
     public function show(string $id)
     {
-        $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
-        if (!$vendor) {
+        $vendor = Auth::user()->vendorProfile;
+        if (! $vendor) {
             abort(403, 'Vendor profile not found.');
         }
 
-        $order = \App\Models\Order::with(['user', 'address', 'items.product.images'])
+        $order = Order::with(['user', 'address', 'items.product.images'])
             ->where('vendor_id', $vendor->id)
             ->findOrFail($id);
-            
-        return \Inertia\Inertia::render('Vendor/Orders/Show', [
-            'order' => $order
+
+        return Inertia::render('Vendor/Orders/Show', [
+            'order' => $order,
         ]);
     }
 
@@ -67,20 +71,22 @@ class OrderController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $vendor = \Illuminate\Support\Facades\Auth::user()->vendorProfile;
-        if (!$vendor) {
+        $vendor = Auth::user()->vendorProfile;
+        if (! $vendor) {
             abort(403, 'Vendor profile not found.');
         }
 
-        $order = \App\Models\Order::where('vendor_id', $vendor->id)->findOrFail($id);
-        
+        $order = Order::where('vendor_id', $vendor->id)->findOrFail($id);
+
         $request->validate([
-            'status' => 'required|in:pending,accepted,processing,shipped,delivered,cancelled'
+            'status' => 'required|in:pending,paid,accepted,processing,shipped,out_for_delivery,delivered,cancelled',
         ]);
 
         $order->update([
-            'status' => $request->status
+            'status' => $request->status,
         ]);
+
+        broadcast(new OrderStatusUpdated($order->fresh()));
 
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }

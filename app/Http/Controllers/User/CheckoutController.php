@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\StripeWebhookController;
 use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\Stripe;
@@ -86,13 +88,28 @@ class CheckoutController extends Controller
         // Store session ID so we can verify on success page
         session(['stripe_checkout_session_id' => $session->id]);
 
-        return redirect($session->url);
+        return Inertia::location($session->url);
     }
 
     public function success(Request $request)
     {
+        $sessionId = $request->query('session_id');
+
+        if ($sessionId) {
+            try {
+                Stripe::setApiKey(config('stripe.secret'));
+                $session = StripeSession::retrieve($sessionId);
+
+                if ($session && $session->payment_status === 'paid') {
+                    app(StripeWebhookController::class)->fulfillCheckoutSession($session);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error fulfilling checkout session on success page', ['error' => $e->getMessage()]);
+            }
+        }
+
         return Inertia::render('User/Checkout/Success', [
-            'sessionId' => $request->query('session_id'),
+            'sessionId' => $sessionId,
         ]);
     }
 
