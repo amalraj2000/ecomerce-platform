@@ -39,7 +39,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 80
+EXPOSE 80 8080
 
 # Run migrations, create storage symlink, then start Supervisor (which manages Nginx and PHP-FPM)
 CMD ["/bin/sh", "-c", "php artisan migrate --force && php artisan storage:link --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]

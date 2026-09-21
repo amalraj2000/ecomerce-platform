@@ -23,10 +23,13 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "@stripe/stripe-js": "^9.16.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "laravel-echo": "^2.5.0",
         "lucide-vue-next": "^1.0.0",
         "pinia": "^4.0.3",
+        "pusher-js": "^8.6.0",
         "radix-vue": "^1.9.17",
         "sweetalert2": "^11.26.25",
         "tailwind-merge": "^3.7.0"

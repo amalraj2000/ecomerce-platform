@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import MainLayout from '@/Layouts/MainLayout.vue';
 
 const props = defineProps({
@@ -10,6 +10,23 @@ const props = defineProps({
 });
 
 const activeTab = ref('description');
+
+// Live stock tracking
+const liveStock = ref(props.product.stock);
+let stockChannel = null;
+
+onMounted(() => {
+    if (window.Echo) {
+        stockChannel = window.Echo.channel(`products.${props.product.id}`)
+            .listen('.stock.updated', (data) => {
+                liveStock.value = data.stock;
+            });
+    }
+});
+
+onUnmounted(() => {
+    if (stockChannel) stockChannel.stopListening('.stock.updated');
+});
 
 // Image Gallery
 const activeImage = ref(props.product.images?.length > 0 ? props.product.images.find(i => i.is_primary)?.image_url || props.product.images[0].image_url : null);
@@ -269,8 +286,24 @@ const voteReview = (reviewId) => {
             </div>
           </div>
 
+          <!-- Stock counter -->
+          <div class="mb-4">
+              <div v-if="liveStock <= 0" class="inline-flex items-center gap-1.5 bg-red-100 text-red-700 border border-red-200 rounded-full px-3 py-1 text-sm font-bold">
+                  <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  Out of Stock
+              </div>
+              <div v-else-if="liveStock <= 5" class="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 border border-orange-200 rounded-full px-3 py-1 text-sm font-bold">
+                  <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                  Only {{ liveStock }} left in stock!
+              </div>
+              <div v-else class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 border border-green-200 rounded-full px-3 py-1 text-sm font-medium">
+                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                  In Stock ({{ liveStock }} available)
+              </div>
+          </div>
+
           <!-- Add to Cart / Buy Now -->
-          <div v-if="product.stock <= 0" class="mt-auto">
+          <div v-if="liveStock <= 0" class="mt-auto">
              <div class="w-full bg-red-50 text-red-700 font-bold py-4 px-8 rounded-xl text-center text-lg border border-red-200 shadow-sm uppercase tracking-wider">
                Out of Stock
              </div>
