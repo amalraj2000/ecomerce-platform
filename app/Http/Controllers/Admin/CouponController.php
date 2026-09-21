@@ -41,6 +41,29 @@ class CouponController extends Controller
         return redirect()->back()->with('success', 'Coupon created successfully.');
     }
 
+    public function update(Request $request, Coupon $coupon)
+    {
+        $request->validate([
+            'code' => 'required|string|max:30|unique:coupons,code,'.$coupon->id,
+            'discount_type' => 'required|in:fixed,percent',
+            'discount_value' => 'required|numeric|min:0.01',
+            'min_order_amount' => 'nullable|numeric|min:0',
+            'expires_at' => 'nullable|date',
+            'is_active' => 'boolean',
+        ]);
+
+        $coupon->update([
+            'code' => strtoupper($request->code),
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'min_order_amount' => $request->min_order_amount ?? 0,
+            'expires_at' => $request->expires_at,
+            'is_active' => $request->is_active ?? false,
+        ]);
+
+        return redirect()->back()->with('success', 'Coupon updated successfully.');
+    }
+
     public function destroy(Coupon $coupon)
     {
         $coupon->delete();

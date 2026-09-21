@@ -18,6 +18,17 @@ const form = useForm({
 });
 
 const showCreateModal = ref(false);
+const editingCoupon = ref(null);
+const showEditModal = ref(false);
+
+const editForm = useForm({
+    code: '',
+    discount_type: 'percent',
+    discount_value: '',
+    min_order_amount: 0,
+    expires_at: '',
+    is_active: true,
+});
 
 const submitCoupon = () => {
     form.post(route('admin.coupons.store'), {
@@ -25,6 +36,29 @@ const submitCoupon = () => {
             showCreateModal.value = false;
             form.reset();
             Swal.fire('Success', 'Coupon code created successfully!', 'success');
+        },
+    });
+};
+
+const openEditModal = (coupon) => {
+    editingCoupon.value = coupon;
+    editForm.code = coupon.code;
+    editForm.discount_type = coupon.discount_type;
+    editForm.discount_value = coupon.discount_value;
+    editForm.min_order_amount = coupon.min_order_amount;
+    editForm.expires_at = coupon.expires_at ? coupon.expires_at.split('T')[0] : '';
+    editForm.is_active = Boolean(coupon.is_active);
+    showEditModal.value = true;
+};
+
+const updateCoupon = () => {
+    if (!editingCoupon.value) return;
+
+    editForm.put(route('admin.coupons.update', editingCoupon.value.id), {
+        onSuccess: () => {
+            showEditModal.value = false;
+            editingCoupon.value = null;
+            Swal.fire('Updated!', 'Coupon code has been updated successfully.', 'success');
         },
     });
 };
@@ -98,12 +132,20 @@ const deleteCoupon = (coupon) => {
                                         </span>
                                     </td>
                                     <td class="py-4 px-4 text-right">
-                                        <button
-                                            @click="deleteCoupon(c)"
-                                            class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition"
-                                        >
-                                            Delete
-                                        </button>
+                                        <div class="flex justify-end items-center space-x-2">
+                                            <button
+                                                @click="openEditModal(c)"
+                                                class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold text-xs rounded-lg transition"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                @click="deleteCoupon(c)"
+                                                class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="coupons.data.length === 0">
@@ -164,6 +206,58 @@ const deleteCoupon = (coupon) => {
                         </button>
                         <button type="submit" :disabled="form.processing" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition">
                             Create Coupon
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Coupon Modal -->
+        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Edit Promo Code</h3>
+                <form @submit.prevent="updateCoupon" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Coupon Code</label>
+                        <input v-model="editForm.code" type="text" placeholder="e.g. SAVE20" class="uppercase rounded-xl border-gray-300 w-full text-sm focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Discount Type</label>
+                            <select v-model="editForm.discount_type" class="rounded-xl border-gray-300 w-full text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="percent">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount ($)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Discount Value</label>
+                            <input v-model="editForm.discount_value" type="number" step="0.01" class="rounded-xl border-gray-300 w-full text-sm focus:ring-indigo-500 focus:border-indigo-500" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Min. Order ($)</label>
+                            <input v-model="editForm.min_order_amount" type="number" step="0.01" class="rounded-xl border-gray-300 w-full text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Expiration Date</label>
+                            <input v-model="editForm.expires_at" type="date" class="rounded-xl border-gray-300 w-full text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 pt-2">
+                        <input v-model="editForm.is_active" type="checkbox" id="edit_is_active" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="edit_is_active" class="text-sm text-gray-700 font-medium">Coupon active</label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                        <button type="button" @click="showEditModal = false" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition">
+                            Cancel
+                        </button>
+                        <button type="submit" :disabled="editForm.processing" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition">
+                            Update Coupon
                         </button>
                     </div>
                 </form>
