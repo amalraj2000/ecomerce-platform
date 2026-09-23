@@ -1,8 +1,7 @@
 <script setup>
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '@/Layouts/MainLayout.vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import Swal from 'sweetalert2';
 
 const props = defineProps({
     order: {
@@ -48,27 +47,6 @@ function showToast(message) {
     if (toastTimeout.value) clearTimeout(toastTimeout.value);
     toastTimeout.value = setTimeout(() => { toastMessage.value = null; }, 5000);
 }
-
-const cancelOrder = () => {
-    Swal.fire({
-        title: 'Cancel Order?',
-        text: 'Are you sure you want to cancel this order? Stock will be restored and payment refunded if applicable.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, cancel order',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('user.orders.cancel', props.order.id), {}, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    liveStatus.value = 'cancelled';
-                }
-            });
-        }
-    });
-};
 
 onMounted(() => {
     if (!window.Echo || !page.props.auth?.user) return;
@@ -126,13 +104,6 @@ onUnmounted(() => {
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <button
-                            v-if="!['delivered', 'cancelled'].includes(liveStatus)"
-                            @click="cancelOrder"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-sm rounded-xl border border-red-200 shadow-sm transition"
-                        >
-                            🚫 Cancel Order
-                        </button>
                         <a :href="route('orders.invoice', order.id)" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm rounded-xl border border-indigo-200 shadow-sm transition">
                             📄 Download Invoice PDF
                         </a>
@@ -249,14 +220,12 @@ onUnmounted(() => {
                             <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 text-sm">
                                 <div class="flex justify-between items-center">
                                     <span class="text-slate-500">Method</span>
-                                    <span class="font-semibold text-slate-900">
-                                        {{ order.payment_method === 'cod' ? '💵 Cash on Delivery (COD)' : '💳 Stripe Card' }}
-                                    </span>
+                                    <span class="font-semibold text-slate-900">Stripe Card</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-slate-500">Status</span>
-                                    <span :class="['font-bold capitalize', (liveStatus === 'cancelled' || order.refund_status === 'refunded') ? 'text-red-600' : 'text-green-600']">
-                                        {{ (liveStatus === 'cancelled' || order.refund_status === 'refunded') ? 'Cancelled & Refunded' : (order.payment_method === 'cod' ? 'Pending COD' : 'Paid') }}
+                                    <span :class="['font-bold capitalize', order.refund_status === 'refunded' ? 'text-red-600' : 'text-green-600']">
+                                        {{ order.refund_status === 'refunded' ? 'Refunded' : 'Paid' }}
                                     </span>
                                 </div>
                                 <div v-if="order.stripe_payment_intent_id" class="pt-2 text-xs text-slate-400 truncate">

@@ -135,16 +135,43 @@ const handleImageUpload = (e) => {
 };
 
 const submitReview = () => {
-    reviewForm.post(route('reviews.store'), {
+    reviewForm.post(route('reviews.store', props.product.id), {
         preserveScroll: true,
         onSuccess: () => {
             reviewForm.reset('rating', 'comment', 'images');
-        }
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Review submitted successfully!',
+                showConfirmButton: false,
+                timer: 2500,
+            });
+        },
+        onError: (errors) => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Review Submission Failed',
+                text: Object.values(errors)[0] || 'Could not submit review.',
+            });
+        },
     });
 };
 
 const voteReview = (reviewId) => {
-    router.post(route('reviews.vote', reviewId), {}, { preserveScroll: true });
+    router.post(route('reviews.vote', reviewId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Feedback recorded!',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        },
+    });
 };
 </script>
 
@@ -212,7 +239,7 @@ const voteReview = (reviewId) => {
             <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 pr-12">{{ product.title }}</h1>
             
             <!-- Wishlist Button inside header -->
-            <button @click="addToWishlist" :disabled="wishlistForm.processing" class="absolute top-6 right-6 md:top-10 md:right-10 bg-white/80 backdrop-blur-sm dark:bg-slate-800/80 p-3 rounded-full text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-700 transition-all z-20 shadow-md border border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Add to Wishlist">
+            <button @click="addToWishlist" class="absolute top-6 right-6 md:top-10 md:right-10 bg-white/80 backdrop-blur-sm dark:bg-slate-800/80 p-3 rounded-full text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-700 transition-all z-20 shadow-md border border-slate-200 dark:border-slate-700 disabled:opacity-50" title="Add to Wishlist">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                  </svg>
